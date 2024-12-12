@@ -10,7 +10,8 @@ namespace sami6.Donation
     [NodeType(
         Id = "com.sami6.DonationProcessor",
         Title = "Donation Processor v0.0.1",
-        Category = "SamyLabs"
+        Category = "SamyLabs",
+        Width = 1.5f
     )]
     public class DonationProcessorNode : Node
     {

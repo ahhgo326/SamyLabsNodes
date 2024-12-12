@@ -12,7 +12,9 @@ namespace sami6.Manual
     [NodeType(
         Id = "sami6.manual.ManualCommandProcessor", 
         Title = "Manual Controller v0.0.1", 
-        Category = "SamyLabs")]
+        Category = "SamyLabs",
+        Width = 1.5f
+    )]
     public class ManualCommandProcessorNode : Node
     {
         [DataInput]

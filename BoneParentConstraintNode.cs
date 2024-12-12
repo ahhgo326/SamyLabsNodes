@@ -12,7 +12,9 @@ namespace Warudo.Plugins.Core.Nodes
     [NodeType(
         Id = "com.sami6.BoneParentConstraintNode", 
         Title = "Bone Parent Constraint v0.0.1", 
-        Category = "SamyLabs")]
+        Category = "SamyLabs",
+        Width = 1.5f
+    )]
     public class BoneParentConstraintNode : Node 
     {
         [DataInput]

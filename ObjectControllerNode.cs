@@ -13,7 +13,8 @@ namespace sami6.Object
     [NodeType(
         Id = "com.sami6.ObjectController",
         Title = "Object Controller v0.0.1",
-        Category = "SamyLabs" 
+        Category = "SamyLabs",
+        Width = 1.5f 
     )]
     public class ObjectControllerNode : Warudo.Core.Graphs.Node
     {
@@ -42,11 +43,11 @@ namespace sami6.Object
         public bool enableShapeKeyControl = true;
 
         [DataInput]
-        [Label("Object Toggle")] 
+        [Label("Toggle Control")] 
         public bool enableObjectToggle = true; 
 
         [DataInput]
-        [Label("Costume Control")]
+        [Label("ON/OFF Control")]
         public bool enableCostumeControl = true;
 
         [DataInput]
