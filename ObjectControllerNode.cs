@@ -14,7 +14,7 @@ namespace sami6.Object
         Id = "com.sami6.ObjectController",
         Title = "Object Controller v0.0.1",
         Category = "SamyLabs",
-        Width = 1.5f 
+        Width = 1.5f
     )]
     public class ObjectControllerNode : Warudo.Core.Graphs.Node
     {
