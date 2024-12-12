@@ -13,7 +13,7 @@ namespace sami6.Object
     [NodeType(
         Id = "com.sami6.ObjectController",
         Title = "Object Controller v0.0.1",
-        Category = "SamyLabs"
+        Category = "SamyLabs" 
     )]
     public class ObjectControllerNode : Warudo.Core.Graphs.Node
     {
@@ -23,44 +23,8 @@ namespace sami6.Object
 
         // :q :q :q :q :q :q :q :q :q :q :q
         [DataInput]
-        [Label("Asset 1")]
+        [Label("Asset")]
         public GameObjectAsset asset1;
-
-        [DataInput]
-        [Label("Asset 2")]
-        public GameObjectAsset asset2;
-
-        [DataInput]
-        [Label("Asset 3")]
-        public GameObjectAsset asset3;
-
-        [DataInput]
-        [Label("Asset 4")]
-        public GameObjectAsset asset4;
-
-        [DataInput]
-        [Label("Asset 5")]
-        public GameObjectAsset asset5;
-
-        [DataInput]
-        [Label("Asset 6")]
-        public GameObjectAsset asset6;
-
-        [DataInput]
-        [Label("Asset 7")]
-        public GameObjectAsset asset7;
-
-        [DataInput]
-        [Label("Asset 8")]
-        public GameObjectAsset asset8;
-
-        [DataInput]
-        [Label("Asset 9")]
-        public GameObjectAsset asset9;
-
-        [DataInput]
-        [Label("Asset 10")]
-        public GameObjectAsset asset10;
 
         [DataInput]
         [Label("Commands")]
@@ -174,34 +138,14 @@ namespace sami6.Object
                 }
             });
 
-            for (int i = 1; i <= 10; i++)
+            Watch<GameObjectAsset>(nameof(asset1), (from, to) =>
             {
-                string assetName = $"asset{i}";
-                Watch<GameObjectAsset>(assetName, (from, to) =>
+                if (to != null && to.Active)
                 {
-                    if (to != null && to.Active)
-                    {
-                        UpdateObjectDict(to.GameObject);
-                        UpdateRendererDict(to.GameObject);
-                        _debugInfo = $"에셋 {i} '{to.Name}' 연결됨\n오브젝트 수: {objectDict.Count}\n렌더러 수: {rendererDict.Count}";
-                    }
-                });
-
-                WatchAsset(assetName, () => {
-                    var asset = GetType().GetField(assetName).GetValue(this) as GameObjectAsset;
-                    if (asset != null && asset.Active)
-                    {
-                        UpdateObjectDict(asset.GameObject);
-                        UpdateRendererDict(asset.GameObject);
-                        _debugInfo = $"에셋 {i} '{asset.Name}' 연결됨\n오브젝트 수: {objectDict.Count}\n렌더러 수: {rendererDict.Count}";
-                    }
-                });
-            }
-
-            WatchAsset(nameof(characterAsset), () => {
-                UpdateObjectDict(characterAsset.GameObject);
-                UpdateRendererDict(characterAsset.GameObject);
-                _debugInfo = $"캐릭터 '{characterAsset.Name}' 연결됨\n오브젝트 수: {objectDict.Count}\n렌더러 수: {rendererDict.Count}";
+                    UpdateObjectDict(to.GameObject);
+                    UpdateRendererDict(to.GameObject);
+                    _debugInfo = $"에셋 '{to.Name}' 연결됨\n오브젝트 수: {objectDict.Count}\n렌더러 수: {rendererDict.Count}";
+                }
             });
         }
 
@@ -242,14 +186,29 @@ namespace sami6.Object
 
         private string GetFullPath(Transform transform)
         {
+            if (transform == null) return "";
+            
             List<string> pathParts = new List<string>();
-            while (transform != null)
+            Transform current = transform;
+            GameObject characterRoot = characterAsset?.GameObject;
+            GameObject assetRoot = asset1?.GameObject;
+            
+            while (current != null)
             {
-                pathParts.Add(transform.name);
-                transform = transform.parent;
+                // characterAsset이나 asset1의 GameObject에 도달하면 중지
+                if ((characterRoot != null && current.gameObject == characterRoot) ||
+                    (assetRoot != null && current.gameObject == assetRoot))
+                {
+                    break;
+                }
+                pathParts.Add(current.name);
+                current = current.parent;
             }
+            
             pathParts.Reverse();
-            return string.Join("/", pathParts);
+            string fullPath = string.Join("/", pathParts);
+            AddDebugLog($"GetFullPath - 변환된 경로: {fullPath} (원본 오브젝트: {transform.name})");
+            return fullPath;
         }
 
         private void ClearAllDictionaries()
@@ -272,11 +231,6 @@ namespace sami6.Object
 
         public bool IsCommandEnabled(string command)
         {
-            if (!command.EndsWith("_OBJ"))
-            {
-                return false;
-            }
-
             if (command == "CLEAR_SAMYLABS_CLOTH")
             {
                 return true;
@@ -328,22 +282,14 @@ namespace sami6.Object
                     {
                         string prefix = command.Substring(0, 3);
                         string objectName = command.Substring(prefix == "ON_" ? 3 : 4);
-                        if (objectName.EndsWith("_OBJ"))
-                        {
-                            objectName = objectName.Substring(0, objectName.Length - 4);
-                        }
                         currentObjectStates[objectName] = prefix == "ON_";
                         AddDebugLog($"ON/OFF 명령어 감지: {command} -> 오브젝트: {objectName}, 상태: {(prefix == "ON_" ? "활성화" : "비활성화")}");
                     }
                     else if (command.StartsWith("TO_") && IsCommandEnabled(command))
                     {
                         string objectName = command.Substring(3);
-                        if (objectName.EndsWith("_OBJ"))
-                        {
-                            objectName = objectName.Substring(0, objectName.Length - 4);
-                        }
-
-                        bool stateChanged = false;
+                        bool foundInCharacter = false;
+                        bool foundInAsset = false;
 
                         // 캐릭터에서 찾기
                         if (characterAsset != null && characterAsset.Active && enableObjectToggle)
@@ -353,29 +299,25 @@ namespace sami6.Object
                             {
                                 bool currentState = targetObject.activeSelf;
                                 currentObjectStates[objectName] = !currentState;
-                                stateChanged = true;
+                                foundInCharacter = true;
                                 AddDebugLog($"캐릭터에서 TO 명령어 처리: {command} -> 오브젝트: {objectName}, 상태: {(!currentState ? "활성화" : "비활성화")}");
                             }
                         }
 
                         // 에셋에서 찾기
-                        for (int i = 1; i <= 10; i++)
+                        if (asset1 != null && asset1.Active && enableObjectToggle)
                         {
-                            var asset = GetType().GetField($"asset{i}").GetValue(this) as GameObjectAsset;
-                            if (asset != null && asset.Active && enableObjectToggle)
+                            string objectPath = FindObjectPath(objectName, asset1.GameObject);
+                            if (objectPath != null && objectDict.TryGetValue(objectPath, out GameObject targetObject))
                             {
-                                string objectPath = FindObjectPath(objectName, asset.GameObject);
-                                if (objectPath != null && objectDict.TryGetValue(objectPath, out GameObject targetObject))
-                                {
-                                    bool currentState = targetObject.activeSelf;
-                                    currentObjectStates[objectName] = !currentState;
-                                    stateChanged = true;
-                                    AddDebugLog($"에셋 {i}에서 TO 명령어 처리: {command} -> 오브젝트: {objectName}, 상태: {(!currentState ? "활성화" : "비활성화")}");
-                                }
+                                bool currentState = targetObject.activeSelf;
+                                currentObjectStates[objectName] = !currentState;
+                                foundInAsset = true;
+                                AddDebugLog($"에셋에서 TO 명령어 처리: {command} -> 오브젝트: {objectName}, 상태: {(!currentState ? "활성화" : "비활성화")}");
                             }
                         }
 
-                        if (!stateChanged)
+                        if (!foundInCharacter && !foundInAsset)
                         {
                             currentObjectStates[objectName] = true;
                             AddDebugLog($"TO 명령어 감지: {command} -> 오브젝트: {objectName}, 상태: 활성화 (이전 상태 없음)");
@@ -395,7 +337,8 @@ namespace sami6.Object
 
                 foreach (var kvp in objectsToUpdate)
                 {
-                    bool found = false;
+                    bool foundInCharacter = false;
+                    bool foundInAsset = false;
 
                     // 캐릭터에서 찾기
                     if (characterAsset != null && characterAsset.Active && enableObjectToggle)
@@ -409,33 +352,29 @@ namespace sami6.Object
                                 _debugInfo = $"캐릭터 오브젝트 '{kvp.Key}' {(kvp.Value ? "활성화" : "비활성화")} 됨";
                                 AddDebugLog($"캐릭터 오브젝트 상태 변경 완료: '{kvp.Key}' -> {(kvp.Value ? "활성화" : "비활성화")}");
                                 AddWorkLog($"캐릭터_{kvp.Key}", true);
-                                found = true;
+                                foundInCharacter = true;
                             }
                         }
                     }
 
                     // 에셋에서 찾기
-                    for (int i = 1; i <= 10; i++)
+                    if (asset1 != null && asset1.Active && enableObjectToggle)
                     {
-                        var asset = GetType().GetField($"asset{i}").GetValue(this) as GameObjectAsset;
-                        if (asset != null && asset.Active && enableObjectToggle)
+                        string objectPath = FindObjectPath(kvp.Key, asset1.GameObject);
+                        if (objectPath != null && objectDict.TryGetValue(objectPath, out GameObject targetObject))
                         {
-                            string objectPath = FindObjectPath(kvp.Key, asset.GameObject);
-                            if (objectPath != null && objectDict.TryGetValue(objectPath, out GameObject targetObject))
+                            if (targetObject.activeSelf != kvp.Value)
                             {
-                                if (targetObject.activeSelf != kvp.Value)
-                                {
-                                    targetObject.SetActive(kvp.Value);
-                                    _debugInfo = $"에셋 {i} 오브젝트 '{kvp.Key}' {(kvp.Value ? "활성화" : "비활성화")} 됨";
-                                    AddDebugLog($"에셋 {i} 오브젝트 상태 변경 완료: '{kvp.Key}' -> {(kvp.Value ? "활성화" : "비활성화")}");
-                                    AddWorkLog($"에셋{i}_{kvp.Key}", true);
-                                    found = true;
-                                }
+                                targetObject.SetActive(kvp.Value);
+                                _debugInfo = $"에셋 오브젝트 '{kvp.Key}' {(kvp.Value ? "활성화" : "비활성화")} 됨";
+                                AddDebugLog($"에셋 오브젝트 상태 변경 완료: '{kvp.Key}' -> {(kvp.Value ? "활성화" : "비활성화")}");
+                                AddWorkLog($"에셋_{kvp.Key}", true);
+                                foundInAsset = true;
                             }
                         }
                     }
 
-                    if (!found)
+                    if (!foundInCharacter && !foundInAsset)
                     {
                         AddDebugLog($"오브젝트를 찾을 수 없음: {kvp.Key}");
                         AddWorkLog(kvp.Key, false);
@@ -473,28 +412,47 @@ namespace sami6.Object
 
         private string FindObjectPath(string objectName, GameObject root)
         {
+            AddDebugLog($"검색할 오브젝트 이름: {objectName}");
             var transforms = root.GetComponentsInChildren<Transform>(true);
+            
+            // objectDict에 저장된 모든 경로 출력
+            AddDebugLog("현재 objectDict에 저장된 경로들:");
+            foreach (var path in objectDict.Keys)
+            {
+                AddDebugLog($"- {path}");
+            }
+
             foreach (var transform in transforms)
             {
-                if (transform.name == objectName)
+                string fullPath = GetFullPath(transform);
+                AddDebugLog($"검색된 경로: {fullPath}");
+                
+                if (transform.name == objectName || fullPath.EndsWith(objectName))
                 {
-                    return GetFullPath(transform);
+                    if (objectDict.ContainsKey(fullPath))
+                    {
+                        AddDebugLog($"일치하는 오브젝트 찾음 (Dict에 존재): {fullPath}");
+                        return fullPath;
+                    }
+                    else
+                    {
+                        AddDebugLog($"오브젝트를 찾았으나 Dict에 없음: {fullPath}");
+                        // Dict에 추가
+                        objectDict[fullPath] = transform.gameObject;
+                        return fullPath;
+                    }
                 }
             }
+            AddDebugLog($"오브젝트를 찾을 수 없음: {objectName}");
             return null;
         }
 
         private void ProcessSingleCommand(string command)
         {
             bool hasAnyAsset = characterAsset != null;
-            for (int i = 1; i <= 10; i++)
+            if (asset1 != null && asset1.Active)
             {
-                var asset = GetType().GetField($"asset{i}").GetValue(this) as GameObjectAsset;
-                if (asset != null && asset.Active)
-                {
-                    hasAnyAsset = true;
-                    break;
-                }
+                hasAnyAsset = true;
             }
 
             if (!hasAnyAsset)
@@ -515,7 +473,8 @@ namespace sami6.Object
                     if (shapeKeyName != null)
                     {
                         AddDebugLog($"쉐이프키 명령어 파싱 결과 - 이름: {shapeKeyName}, 값: {value}");
-                        bool found = false;
+                        bool foundCharacter = false;
+                        bool foundAsset = false;
 
                         // 캐릭터 처리
                         if (characterAsset != null && characterAsset.Active && enableShapeKeyControl)
@@ -528,40 +487,34 @@ namespace sami6.Object
                                 {
                                     float previousWeight = renderer.GetBlendShapeWeight(shapeKeyIndex);
                                     renderer.SetBlendShapeWeight(shapeKeyIndex, value * 100f);
-                                    found = true;
+                                    foundCharacter = true;
                                     AddDebugLog($"캐릭터 쉐이프키 '{shapeKeyName}' 발견 - 렌더러: {renderer.name}");
                                     AddDebugLog($"쉐이프키 값 변경: {previousWeight} -> {value * 100f}");
                                     AddWorkLog($"캐릭터_{shapeKeyName}", true);
-                                    break;
                                 }
                             }
                         }
 
                         // 에셋 처리
-                        for (int i = 1; i <= 10; i++)
+                        if (asset1 != null && asset1.Active && enableShapeKeyControl)
                         {
-                            var asset = GetType().GetField($"asset{i}").GetValue(this) as GameObjectAsset;
-                            if (asset != null && asset.Active && enableShapeKeyControl)
+                            var meshRenderers = asset1.GameObject.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                            foreach (var renderer in meshRenderers)
                             {
-                                var meshRenderers = asset.GameObject.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-                                foreach (var renderer in meshRenderers)
+                                int shapeKeyIndex = renderer.sharedMesh.GetBlendShapeIndex(shapeKeyName);
+                                if (shapeKeyIndex != -1)
                                 {
-                                    int shapeKeyIndex = renderer.sharedMesh.GetBlendShapeIndex(shapeKeyName);
-                                    if (shapeKeyIndex != -1)
-                                    {
-                                        float previousWeight = renderer.GetBlendShapeWeight(shapeKeyIndex);
-                                        renderer.SetBlendShapeWeight(shapeKeyIndex, value * 100f);
-                                        found = true;
-                                        AddDebugLog($"에셋 {i} 쉐이프키 '{shapeKeyName}' 발견 - 렌더러: {renderer.name}");
-                                        AddDebugLog($"쉐이프키 값 변경: {previousWeight} -> {value * 100f}");
-                                        AddWorkLog($"에셋{i}_{shapeKeyName}", true);
-                                        break;
-                                    }
+                                    float previousWeight = renderer.GetBlendShapeWeight(shapeKeyIndex);
+                                    renderer.SetBlendShapeWeight(shapeKeyIndex, value * 100f);
+                                    foundAsset = true;
+                                    AddDebugLog($"에셋 쉐이프키 '{shapeKeyName}' 발견 - 렌더러: {renderer.name}");
+                                    AddDebugLog($"쉐이프키 값 변경: {previousWeight} -> {value * 100f}");
+                                    AddWorkLog($"에셋_{shapeKeyName}", true);
                                 }
                             }
                         }
 
-                        if (!found)
+                        if (!foundCharacter && !foundAsset)
                         {
                             _debugInfo = $"쉐이프키를 찾을 수 없습니다: {shapeKeyName}";
                             AddDebugLog(_debugInfo);
@@ -614,12 +567,6 @@ namespace sami6.Object
 
                 string shapeKeyName = withoutPrefix.Substring(0, lastUnderscoreIndex);
                 string valueStr = withoutPrefix.Substring(lastUnderscoreIndex + 1);
-
-                // _OBJ 접미사 제거
-                if (shapeKeyName.EndsWith("_OBJ"))
-                {
-                    shapeKeyName = shapeKeyName.Substring(0, shapeKeyName.Length - 4);
-                }
 
                 if (float.TryParse(valueStr, out float value))
                 {

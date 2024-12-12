@@ -1,3 +1,4 @@
+// VERSION 0.0.1
 using UnityEngine;
 using Warudo.Core.Attributes;
 using Warudo.Core.Graphs;
@@ -8,7 +9,10 @@ using DG.Tweening;
 
 namespace Warudo.Plugins.Core.Nodes
 {
-    [NodeType(Id = "0326.CharacterMeshObjectItemListPlugin", Title = "Bone Parent Constraint", Category = "SamyLabs")]
+    [NodeType(
+        Id = "com.sami6.BoneParentConstraintNode", 
+        Title = "Bone Parent Constraint v0.0.1", 
+        Category = "SamyLabs")]
     public class BoneParentConstraintNode : Node 
     {
         [DataInput]
