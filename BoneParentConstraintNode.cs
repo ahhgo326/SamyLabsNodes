@@ -1,4 +1,4 @@
-// VERSION 0.0.1
+// VERSION 0.0.2
 using UnityEngine;
 using Warudo.Core.Attributes;
 using Warudo.Core.Graphs;
@@ -14,12 +14,15 @@ namespace Warudo.Plugins.Core.Nodes
         FPS_30 = 30,
         FPS_60 = 60,
         FPS_90 = 90,
-        FPS_120 = 120
+        FPS_120 = 120,
+
+        FPS_240 = 240,
+        FPS_360 = 360
     }
 
     [NodeType(
         Id = "com.sami6.BoneParentConstraintNode", 
-        Title = "Bone Parent Constraint v0.0.1", 
+        Title = "Bone Parent Constraint v0.0.2", 
         Category = "SamyLabs",
         Width = 1.5f
     )]
@@ -47,7 +50,7 @@ namespace Warudo.Plugins.Core.Nodes
 
         [DataInput]
         [Label("Update Rate")]
-        public UpdateRate UpdateFPS = UpdateRate.FPS_120;
+        public UpdateRate UpdateFPS = UpdateRate.FPS_360;
 
         private Animator _targetAnimator;
         private bool _initialized = false;

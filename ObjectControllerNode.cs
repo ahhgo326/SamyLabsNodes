@@ -12,7 +12,7 @@ namespace sami6.Object
 {
     [NodeType(
         Id = "com.sami6.ObjectController",
-        Title = "Object Controller v0.0.1",
+        Title = "Object Controller v0.0.2",
         Category = "SamyLabs",
         Width = 1.5f
     )]
