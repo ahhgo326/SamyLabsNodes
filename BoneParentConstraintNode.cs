@@ -9,6 +9,14 @@ using DG.Tweening;
 
 namespace Warudo.Plugins.Core.Nodes
 {
+    public enum UpdateRate
+    {
+        FPS_30 = 30,
+        FPS_60 = 60,
+        FPS_90 = 90,
+        FPS_120 = 120
+    }
+
     [NodeType(
         Id = "com.sami6.BoneParentConstraintNode", 
         Title = "Bone Parent Constraint v0.0.1", 
@@ -37,12 +45,25 @@ namespace Warudo.Plugins.Core.Nodes
         [Label("Sync Asset Scale")]
         public bool SyncAssetScale = true;
 
+        [DataInput]
+        [Label("Update Rate")]
+        public UpdateRate UpdateFPS = UpdateRate.FPS_60;
+
         private Animator _targetAnimator;
         private bool _initialized = false;
 
         protected override void OnCreate()
         {
             base.OnCreate();
+
+            // FPS 값이 변경될 때마다 FixedUpdate 간격 업데이트
+            Watch(nameof(UpdateFPS), () =>
+            {
+                Time.fixedDeltaTime = 1f / (float)UpdateFPS;
+            });
+
+            // 초기 FPS 설정
+            Time.fixedDeltaTime = 1f / (float)UpdateFPS;
 
             Watch<CharacterAsset>(nameof(SourceCharacter), (from, to) =>
             {
@@ -135,10 +156,16 @@ namespace Warudo.Plugins.Core.Nodes
             }
         }
 
+        public override void OnFixedUpdate()
+        {
+            base.OnFixedUpdate();
+            Execute(); // FixedUpdate에서 Transform 적용
+        }
+
         public override void OnLateUpdate()
         {
             base.OnLateUpdate();
-            Execute(); // LateUpdate에서 Transform 적용
+            // LateUpdate에서는 더 이상 Execute를 호출하지 않음
         }
     }
 }
