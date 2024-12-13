@@ -1,4 +1,4 @@
-// VERSION 0.0.1
+// VERSION 0.0.2
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -129,25 +129,78 @@ namespace sami6.Object
 
         protected override void OnCreate()
         {
+            base.OnCreate();
+
             Watch<GameObjectAsset>(nameof(characterAsset), (from, to) =>
             {
-                if (to != null && to.Active)
+                ResetState();
+                if (to?.GameObject != null && to.Active)
                 {
-                    UpdateObjectDict(to.GameObject);
-                    UpdateRendererDict(to.GameObject);
-                    _debugInfo = $"캐릭터 '{to.Name}' 연결됨\n오브젝트 수: {objectDict.Count}\n렌더러 수: {rendererDict.Count}";
+                    InitializeAssets();
                 }
             });
 
             Watch<GameObjectAsset>(nameof(asset1), (from, to) =>
             {
-                if (to != null && to.Active)
+                ResetState();
+                if (to?.GameObject != null && to.Active)
                 {
-                    UpdateObjectDict(to.GameObject);
-                    UpdateRendererDict(to.GameObject);
-                    _debugInfo = $"에셋 '{to.Name}' 연결됨\n오브젝트 수: {objectDict.Count}\n렌더러 수: {rendererDict.Count}";
+                    InitializeAssets();
                 }
             });
+
+            WatchAsset(nameof(characterAsset), () =>
+            {
+                ResetState();
+                if (characterAsset?.GameObject != null && characterAsset.Active)
+                {
+                    InitializeAssets();
+                }
+            });
+
+            WatchAsset(nameof(asset1), () =>
+            {
+                ResetState();
+                if (asset1?.GameObject != null && asset1.Active)
+                {
+                    InitializeAssets();
+                }
+            });
+        }
+
+        private void ResetState()
+        {
+            rendererDict.Clear();
+            rendererShapeKeys.Clear();
+            _previousObjectStates.Clear();
+            _workLogs.Clear();
+            _debugLogs.Clear();
+            objectDict.Clear();
+            objectPaths.Clear();
+        }
+
+        private void InitializeAssets()
+        {
+            try
+            {
+                if (characterAsset?.GameObject != null)
+                {
+                    UpdateObjectDict(characterAsset.GameObject);
+                    UpdateRendererDict(characterAsset.GameObject);
+                    AddDebugLog($"캐릭터 '{characterAsset.Name}' 초기화 완료");
+                }
+
+                if (asset1?.GameObject != null)
+                {
+                    UpdateObjectDict(asset1.GameObject);
+                    UpdateRendererDict(asset1.GameObject);
+                    AddDebugLog($"에셋 '{asset1.Name}' 초기화 완료");
+                }
+            }
+            catch (Exception ex)
+            {
+                AddDebugLog($"에셋 초기화 중 오류 발생: {ex.Message}");
+            }
         }
 
         private void UpdateRendererDict(GameObject root)
@@ -563,7 +616,7 @@ namespace sami6.Object
             try
             {
                 string withoutPrefix = command.Substring(4);
-                int lastUnderscoreIndex = withoutPrefix.LastIndexOf('_');
+                int lastUnderscoreIndex = withoutPrefix.LastIndexOf('_'); 
                 if (lastUnderscoreIndex == -1) return (null, 0f);
 
                 string shapeKeyName = withoutPrefix.Substring(0, lastUnderscoreIndex);
