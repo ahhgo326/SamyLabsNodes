@@ -47,7 +47,7 @@ namespace Warudo.Plugins.Core.Nodes
 
         [DataInput]
         [Label("Update Rate")]
-        public UpdateRate UpdateFPS = UpdateRate.FPS_60;
+        public UpdateRate UpdateFPS = UpdateRate.FPS_120;
 
         private Animator _targetAnimator;
         private bool _initialized = false;
