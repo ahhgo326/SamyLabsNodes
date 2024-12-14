@@ -1,4 +1,4 @@
-// VERSION 0.0.2
+// VERSION 0.0.3
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ namespace sami6.Object
 {
     [NodeType(
         Id = "com.sami6.ObjectController",
-        Title = "Object Controller v0.0.2",
+        Title = "Object Controller v0.0.3",
         Category = "SamyLabs",
         Width = 1.5f
     )]
@@ -348,26 +348,38 @@ namespace sami6.Object
                         // 캐릭터에서 찾기
                         if (characterAsset != null && characterAsset.Active && enableObjectToggle)
                         {
-                            string objectPath = FindObjectPath(objectName, characterAsset.GameObject);
-                            if (objectPath != null && objectDict.TryGetValue(objectPath, out GameObject targetObject))
+                            var objectPaths = FindObjectPath(objectName, characterAsset.GameObject);
+                            if (objectPaths != null && objectPaths.Count > 0)
                             {
-                                bool currentState = targetObject.activeSelf;
-                                currentObjectStates[objectName] = !currentState;
-                                foundInCharacter = true;
-                                AddDebugLog($"캐릭터에서 TO 명령어 처리: {command} -> 오브젝트: {objectName}, 상태: {(!currentState ? "활성화" : "비활성화")}");
+                                foreach (var path in objectPaths)
+                                {
+                                    if (objectDict.TryGetValue(path, out GameObject targetObject))
+                                    {
+                                        bool currentState = targetObject.activeSelf;
+                                        currentObjectStates[objectName] = !currentState;
+                                        foundInCharacter = true;
+                                        AddDebugLog($"캐릭터에서 TO 명령어 처리: {command} -> 오브젝트: {objectName}, 상태: {(!currentState ? "활성화" : "비활성화")}");
+                                    }
+                                }
                             }
                         }
 
                         // 에셋에서 찾기
                         if (asset1 != null && asset1.Active && enableObjectToggle)
                         {
-                            string objectPath = FindObjectPath(objectName, asset1.GameObject);
-                            if (objectPath != null && objectDict.TryGetValue(objectPath, out GameObject targetObject))
+                            var objectPaths = FindObjectPath(objectName, asset1.GameObject);
+                            if (objectPaths != null && objectPaths.Count > 0)
                             {
-                                bool currentState = targetObject.activeSelf;
-                                currentObjectStates[objectName] = !currentState;
-                                foundInAsset = true;
-                                AddDebugLog($"에셋에서 TO 명령어 처리: {command} -> 오브젝트: {objectName}, 상태: {(!currentState ? "활성화" : "비활성화")}");
+                                foreach (var path in objectPaths)
+                                {
+                                    if (objectDict.TryGetValue(path, out GameObject targetObject))
+                                    {
+                                        bool currentState = targetObject.activeSelf;
+                                        currentObjectStates[objectName] = !currentState;
+                                        foundInAsset = true;
+                                        AddDebugLog($"에셋에서 TO 명령어 처리: {command} -> 오브젝트: {objectName}, 상태: {(!currentState ? "활성화" : "비활성화")}");
+                                    }
+                                }
                             }
                         }
 
@@ -397,16 +409,22 @@ namespace sami6.Object
                     // 캐릭터에서 찾기
                     if (characterAsset != null && characterAsset.Active && enableObjectToggle)
                     {
-                        string objectPath = FindObjectPath(kvp.Key, characterAsset.GameObject);
-                        if (objectPath != null && objectDict.TryGetValue(objectPath, out GameObject targetObject))
+                        var objectPaths = FindObjectPath(kvp.Key, characterAsset.GameObject);
+                        if (objectPaths != null && objectPaths.Count > 0)
                         {
-                            if (targetObject.activeSelf != kvp.Value)
+                            foreach (var path in objectPaths)
                             {
-                                targetObject.SetActive(kvp.Value);
-                                _debugInfo = $"캐릭터 오브젝트 '{kvp.Key}' {(kvp.Value ? "활성화" : "비활성화")} 됨";
-                                AddDebugLog($"캐릭터 오브젝트 상태 변경 완료: '{kvp.Key}' -> {(kvp.Value ? "활성화" : "비활성화")}");
-                                AddWorkLog($"캐릭터_{kvp.Key}", true);
-                                foundInCharacter = true;
+                                if (objectDict.TryGetValue(path, out GameObject targetObject))
+                                {
+                                    if (targetObject.activeSelf != kvp.Value)
+                                    {
+                                        targetObject.SetActive(kvp.Value);
+                                        _debugInfo = $"캐릭터 오브젝트 '{kvp.Key}' {(kvp.Value ? "활성화" : "비활성화")} 됨";
+                                        AddDebugLog($"캐릭터 오브젝트 상태 변경 완료: '{kvp.Key}' -> {(kvp.Value ? "활성화" : "비활성화")}");
+                                        AddWorkLog($"캐릭터_{kvp.Key}", true);
+                                        foundInCharacter = true;
+                                    }
+                                }
                             }
                         }
                     }
@@ -414,16 +432,22 @@ namespace sami6.Object
                     // 에셋에서 찾기
                     if (asset1 != null && asset1.Active && enableObjectToggle)
                     {
-                        string objectPath = FindObjectPath(kvp.Key, asset1.GameObject);
-                        if (objectPath != null && objectDict.TryGetValue(objectPath, out GameObject targetObject))
+                        var objectPaths = FindObjectPath(kvp.Key, asset1.GameObject);
+                        if (objectPaths != null && objectPaths.Count > 0)
                         {
-                            if (targetObject.activeSelf != kvp.Value)
+                            foreach (var path in objectPaths)
                             {
-                                targetObject.SetActive(kvp.Value);
-                                _debugInfo = $"에셋 오브젝트 '{kvp.Key}' {(kvp.Value ? "활성화" : "비활성화")} 됨";
-                                AddDebugLog($"에셋 오브젝트 상태 변경 완료: '{kvp.Key}' -> {(kvp.Value ? "활성화" : "비활성화")}");
-                                AddWorkLog($"에셋_{kvp.Key}", true);
-                                foundInAsset = true;
+                                if (objectDict.TryGetValue(path, out GameObject targetObject))
+                                {
+                                    if (targetObject.activeSelf != kvp.Value)
+                                    {
+                                        targetObject.SetActive(kvp.Value);
+                                        _debugInfo = $"에셋 오브젝트 '{kvp.Key}' {(kvp.Value ? "활성화" : "비활성화")} 됨";
+                                        AddDebugLog($"에셋 오브젝트 상태 변경 완료: '{kvp.Key}' -> {(kvp.Value ? "활성화" : "비활성화")}");
+                                        AddWorkLog($"에셋_{kvp.Key}", true);
+                                        foundInAsset = true;
+                                    }
+                                }
                             }
                         }
                     }
@@ -464,10 +488,11 @@ namespace sami6.Object
             }
         }
 
-        private string FindObjectPath(string objectName, GameObject root)
+        private List<string> FindObjectPath(string objectName, GameObject root)
         {
             AddDebugLog($"검색할 오브젝트 이름: {objectName}");
             var transforms = root.GetComponentsInChildren<Transform>(true);
+            var matchingPaths = new List<string>();
             
             // objectDict에 저장된 모든 경로 출력
             AddDebugLog("현재 objectDict에 저장된 경로들:");
@@ -486,19 +511,28 @@ namespace sami6.Object
                     if (objectDict.ContainsKey(fullPath))
                     {
                         AddDebugLog($"일치하는 오브젝트 찾음 (Dict에 존재): {fullPath}");
-                        return fullPath;
+                        matchingPaths.Add(fullPath);
                     }
                     else
                     {
                         AddDebugLog($"오브젝트를 찾았으나 Dict에 없음: {fullPath}");
                         // Dict에 추가
                         objectDict[fullPath] = transform.gameObject;
-                        return fullPath;
+                        matchingPaths.Add(fullPath);
                     }
                 }
             }
-            AddDebugLog($"오브젝트를 찾을 수 없음: {objectName}");
-            return null;
+            
+            if (matchingPaths.Count == 0)
+            {
+                AddDebugLog($"오브젝트를 찾을 수 없음: {objectName}");
+            }
+            else
+            {
+                AddDebugLog($"총 {matchingPaths.Count}개의 일치하는 오브젝트를 찾음");
+            }
+            
+            return matchingPaths;
         }
 
         private void ProcessSingleCommand(string command)
