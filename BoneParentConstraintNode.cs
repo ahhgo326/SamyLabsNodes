@@ -22,7 +22,7 @@ namespace Warudo.Plugins.Core.Nodes
 
     [NodeType(
         Id = "com.sami6.BoneParentConstraintNode", 
-        Title = "Bone Parent Constraint v0.0.2", 
+        Title = "Bone Parent Constraint v0.0.3", 
         Category = "SamyLabs",
         Width = 1.5f
     )]
@@ -51,6 +51,10 @@ namespace Warudo.Plugins.Core.Nodes
         [DataInput]
         [Label("Update Rate")]
         public UpdateRate UpdateFPS = UpdateRate.FPS_360;
+
+        [DataInput]
+        [Label("Use Late Update")]
+        public bool UseLateUpdate = false;
 
         private Animator _targetAnimator;
         private bool _initialized = false;
@@ -162,13 +166,19 @@ namespace Warudo.Plugins.Core.Nodes
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-            Execute(); // FixedUpdate에서 Transform 적용
+            if (!UseLateUpdate)
+            {
+                Execute(); // FixedUpdate에서 Transform 적용
+            }
         }
 
         public override void OnLateUpdate()
         {
             base.OnLateUpdate();
-            // LateUpdate에서는 더 이상 Execute를 호출하지 않음
+            if (UseLateUpdate)
+            {
+                Execute(); // LateUpdate에서 Transform 적용
+            }
         }
     }
 }
